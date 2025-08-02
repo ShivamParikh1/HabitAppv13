@@ -35,8 +35,8 @@ import ResetHabits from './pages/ResetHabit'
 function AppRoutes() {
   const { currentUser } = useAuth();
 
-  // Show auth pages if user is not signed in or email not verified
-  if (!currentUser || !currentUser.emailVerified) {
+  // Show auth pages if user is not signed in
+  if (!currentUser) {
     return (
       <Routes>
         <Route path="/signup" element={<SignUp />} />
@@ -47,7 +47,7 @@ function AppRoutes() {
     );
   }
 
-  // Show main app if user is signed in and email is verified
+  // Show main app if user is signed in
   return (
     <ProtectedRoute>
       <Layout>

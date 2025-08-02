@@ -211,7 +211,7 @@ export default function Layout({ children, currentPageName }) {
               <DropdownMenuContent align="end" className="w-64">
                 <div className="px-3 py-2 border-b">
                   <p className="font-semibold">{user.full_name || "User"}</p>
-                  <p className="text-sm text-gray-500">{user.email}</p>
+                  <p className="text-sm text-gray-500">{user.phoneNumber || user.email}</p>
                 </div>
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />
@@ -267,7 +267,7 @@ export default function Layout({ children, currentPageName }) {
                 </Avatar>
                 <div>
                   <p className="font-semibold">{user.full_name || "User"}</p>
-                  <p className="text-sm text-gray-500">{user.email}</p>
+                  <p className="text-sm text-gray-500">{user.phoneNumber || user.email}</p>
                 </div>
               </div>
 
@@ -395,7 +395,7 @@ export default function Layout({ children, currentPageName }) {
                     </Avatar>
                     <div className="flex-1 text-left">
                       <p className="font-semibold">{user.full_name || "User"}</p>
-                      <p className="text-sm text-gray-500">{user.email}</p>
+                      <p className="text-sm text-gray-500">{user.phoneNumber || user.email}</p>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import EmailVerification from './EmailVerification';
 
 export default function ProtectedRoute({ children }) {
   const { currentUser } = useAuth();
@@ -10,11 +9,7 @@ export default function ProtectedRoute({ children }) {
     return null;
   }
 
-  // If user is signed in but email is not verified
-  if (!currentUser.emailVerified) {
-    return <EmailVerification />;
-  }
-
-  // User is signed in and email is verified
+  // For phone auth, users are automatically verified when they complete SMS verification
+  // No additional verification step needed
   return children;
 }

@@ -6,16 +6,16 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Alert, AlertDescription } from '../ui/alert';
-import { Target, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Target, Phone, MessageSquare } from 'lucide-react';
 
 export default function SignIn() {
+  const [step, setStep] = useState('phone'); // 'phone' or 'verify'
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    phoneNumber: '',
+    verificationCode: ''
   });
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signin, authError, setAuthError } = useAuth();
+  const { signin, verifyCode, authError, setAuthError } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -24,15 +24,67 @@ export default function SignIn() {
     if (authError) setAuthError(null);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  const formatPhoneNumber = (phone) => {
+    // Remove all non-digits
+    const digits = phone.replace(/\D/g, '');
     
+    // Add country code if not present
+    if (digits.length === 10) {
+      return `+1${digits}`;
+    } else if (digits.length === 11 && digits.startsWith('1')) {
+      return `+${digits}`;
+    } else if (digits.startsWith('+')) {
+      return phone;
+    }
+    
+    return `+1${digits}`;
+  };
+
+  const handleSendCode = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.phoneNumber.trim()) {
+      setAuthError('Please enter your phone number.');
+      return;
+    }
+
+    setLoading(true);
     try {
-      await signin(formData.email, formData.password);
+      const formattedPhone = formatPhoneNumber(formData.phoneNumber);
+      await signin(formattedPhone);
+      setStep('verify');
+    } catch (error) {
+      console.error('Send code error:', error);
+    }
+    setLoading(false);
+  };
+
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.verificationCode.trim()) {
+      setAuthError('Please enter the verification code.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await verifyCode(formData.verificationCode);
       navigate('/');
     } catch (error) {
-      console.error('Signin error:', error);
+      console.error('Verify code error:', error);
+    }
+    setLoading(false);
+  };
+
+  const handleResendCode = async () => {
+    setLoading(true);
+    try {
+      const formattedPhone = formatPhoneNumber(formData.phoneNumber);
+      await signin(formattedPhone);
+      setAuthError(null);
+    } catch (error) {
+      console.error('Resend code error:', error);
     }
     setLoading(false);
   };
@@ -44,75 +96,119 @@ export default function SignIn() {
           <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <Target className="w-8 h-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-          <p className="text-gray-600">Sign in to continue your habit journey</p>
+          <CardTitle className="text-2xl font-bold">
+            {step === 'phone' ? 'Welcome Back' : 'Verify Phone Number'}
+          </CardTitle>
+          <p className="text-gray-600">
+            {step === 'phone' 
+              ? 'Sign in to continue your habit journey'
+              : `Enter the verification code sent to ${formData.phoneNumber}`
+            }
+          </p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {authError && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertDescription className="text-red-800">{authError}</AlertDescription>
-              </Alert>
-            )}
-            
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter your email"
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Enter your password"
-                  className="pl-10 pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="text-right">
-              <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700">
-                Forgot password?
-              </Link>
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Signing In...
-                </>
-              ) : (
-                'Sign In'
+          {step === 'phone' ? (
+            <form onSubmit={handleSendCode} className="space-y-4">
+              {authError && (
+                <Alert className="border-red-200 bg-red-50">
+                  <AlertDescription className="text-red-800">{authError}</AlertDescription>
+                </Alert>
               )}
-            </Button>
-          </form>
+              
+              <div>
+                <Label htmlFor="phoneNumber">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    type="tel"
+                    value={formData.phoneNumber}
+                    onChange={handleChange}
+                    placeholder="+1 (555) 123-4567"
+                    className="pl-10"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  We'll send you a verification code via SMS
+                </p>
+              </div>
+
+              <div id="recaptcha-container"></div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Sending Code...
+                  </>
+                ) : (
+                  'Send Verification Code'
+                )}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyCode} className="space-y-4">
+              {authError && (
+                <Alert className="border-red-200 bg-red-50">
+                  <AlertDescription className="text-red-800">{authError}</AlertDescription>
+                </Alert>
+              )}
+              
+              <div>
+                <Label htmlFor="verificationCode">Verification Code</Label>
+                <div className="relative">
+                  <MessageSquare className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="verificationCode"
+                    name="verificationCode"
+                    type="text"
+                    value={formData.verificationCode}
+                    onChange={handleChange}
+                    placeholder="Enter 6-digit code"
+                    className="pl-10 text-center text-lg tracking-widest"
+                    maxLength="6"
+                    required
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Verifying...
+                  </>
+                ) : (
+                  'Verify & Sign In'
+                )}
+              </Button>
+
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleResendCode}
+                  disabled={loading}
+                  className="text-sm"
+                >
+                  Didn't receive the code? Resend
+                </Button>
+              </div>
+
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setStep('phone')}
+                  className="text-sm"
+                >
+                  Change phone number
+                </Button>
+              </div>
+            </form>
+          )}
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">

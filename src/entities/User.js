@@ -14,16 +14,18 @@ export const User = {
       if (userDoc.exists()) {
         return {
           id: currentUser.uid,
-          email: currentUser.email,
+          email: currentUser.email || '',
+          phoneNumber: currentUser.phoneNumber || '',
           full_name: currentUser.displayName || '',
           profile_picture: currentUser.photoURL || null,
-          emailVerified: currentUser.emailVerified,
+          phoneVerified: true, // Phone is verified when user signs in with SMS
           ...userDoc.data()
         };
       } else {
         // Create user document if it doesn't exist
         const userData = {
-          email: currentUser.email,
+          email: currentUser.email || '',
+          phoneNumber: currentUser.phoneNumber || '',
           full_name: currentUser.displayName || '',
           profile_picture: currentUser.photoURL || null,
           created_date: new Date().toISOString(),
@@ -36,10 +38,11 @@ export const User = {
         
         return {
           id: currentUser.uid,
-          email: currentUser.email,
+          email: currentUser.email || '',
+          phoneNumber: currentUser.phoneNumber || '',
           full_name: currentUser.displayName || '',
           profile_picture: currentUser.photoURL || null,
-          emailVerified: currentUser.emailVerified,
+          phoneVerified: true,
           ...userData
         };
       }
